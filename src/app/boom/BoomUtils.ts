@@ -1,5 +1,7 @@
 import _ from 'lodash';
-import { IBoomPattern } from './Boom.interface';
+import {IBoomPattern} from './Boom.interface';
+import {BoomSeries} from "./BoomSeries";
+import {BoomPattern} from "./BoomPattern";
 
 export const normalizeColor = function (color: string) {
   if (color.toLowerCase() === 'green') {
@@ -189,6 +191,8 @@ export const getSeriesValue = function (series: any, statType: string): number {
       value = series.stats[statType] !== undefined ? series.stats[statType] : null;
     }
   }
+  // console.log(value);
+  // console.log(typeof value);
   return value;
 };
 export const getCurrentTimeStamp = function (dataPoints: any[]): Date {
@@ -290,4 +294,50 @@ export const doesValueNeedsToHide = function (value: number, filter: any): boole
     }
   }
   return hidden;
+};
+
+export const supplementUndefinedVals = function (inputdata: BoomSeries[], patterns: BoomPattern[], defaultPattern: BoomPattern, seriesOptions: any, scopedVars: any, templateSrv: any, timeSrv: any): BoomSeries[] {
+
+  let supplementSeries: BoomSeries[] = [];
+
+  try {
+
+    let rows_found: string[] = _.uniq(_.map(inputdata, d => d.row_name));
+    let patterns_found: BoomPattern[] = _.uniq(_.map(inputdata, d => d.pattern));
+
+    _.each(rows_found, row_name => {
+      _.each(patterns_found, pattern => {
+        let matched_items = _.filter(inputdata, o => {
+          // console.log(pattern);
+          // console.log(o.pattern);
+          return o.row_name === row_name && o.pattern.pattern === pattern.pattern;
+        });
+        if (!matched_items || matched_items.length === 0) {
+          try {
+            supplementSeries.push(
+                new BoomSeries(
+                    {
+                      datapoints: [],
+                      target: `${row_name}${pattern.delimiter} ${pattern.pattern}`
+                    },
+                    defaultPattern,
+                    patterns,
+                    seriesOptions,
+                    scopedVars,
+                    templateSrv,
+                    timeSrv
+                )
+            );
+          } catch (e) {
+            console.log('error in undefined creation :(');
+            console.log((e as Error).message);
+          }
+        }
+      });
+    });
+  } catch (e) {
+    console.log(`error in supplementUndefinedVals: ${(e as Error).message}`);
+  }
+  // console.log(`Supplementing ${supplementSeries.length}`);
+  return supplementSeries;
 };

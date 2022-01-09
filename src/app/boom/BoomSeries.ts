@@ -2,7 +2,13 @@
 
 import TimeSeries from "app/core/time_series2";
 import _ from "lodash";
-import { replaceTokens, getActualNameWithoutTokens, getMetricNameFromTaggedAlias, getLablesFromTaggedAlias } from "./index";
+import {
+    replaceTokens,
+    getActualNameWithoutTokens,
+    getMetricNameFromTaggedAlias,
+    getLablesFromTaggedAlias,
+    BoomPattern
+} from "./index";
 import { getThresholds, getBGColor, getTextColor, getLink, GetValuesReplaced } from "./BoomSeriesUtils";
 import { getDisplayValueTemplate, getSeriesValue, getCurrentTimeStamp, replaceDelimitedColumns, getRowName, getColName, doesValueNeedsToHide } from "./BoomUtils";
 import { get_formatted_value } from  "./../GrafanaUtils";
@@ -11,12 +17,12 @@ import { IBoomSeries } from "./Boom.interface";
 class BoomSeries implements IBoomSeries {
 
     private debug_mode: Boolean;
-    private pattern: any = undefined;
     private seriesName: string;
     private currentTimeStamp: Date;
     private template_value = "";
     private row_col_wrapper = "_";
     private decimals: Number;
+    public pattern: BoomPattern;
     public col_name: string;
     public row_name: string;
     public row_name_raw: string;
@@ -33,7 +39,8 @@ class BoomSeries implements IBoomSeries {
     public _tags: any[] = [];
 
     constructor(seriesData: any, panelDefaultPattern: any, panelPatterns: any[], options: any, scopedVars: any, templateSrv: any, timeSrv: any) {
-
+        // console.log('creating series');
+        // console.log(seriesData.target);
         let series = new TimeSeries({
             alias: seriesData.target,
             datapoints: seriesData.datapoints || []
@@ -47,7 +54,7 @@ class BoomSeries implements IBoomSeries {
 
         let getMatchingAndEnabledPattern = (patterns, seriesName) => patterns.find(p => seriesName.match(p.pattern) && p.disabled !== true);
         this.pattern = getMatchingAndEnabledPattern(panelPatterns, this.seriesName) || panelDefaultPattern;
-
+        // console.log(`setting pattern to: ${this.pattern.pattern}`);
         this.decimals = this.pattern.decimals || panelDefaultPattern.decimals || 2;
         this.value = getSeriesValue(series, this.pattern.valueName);
         this.value_formatted = get_formatted_value(this.value, this.decimals, this.pattern.format);
@@ -89,7 +96,6 @@ class BoomSeries implements IBoomSeries {
 
         if (this.debug_mode !== true) {
             delete this.seriesName;
-            delete this.pattern;
             delete this.thresholds;
             delete this.decimals;
             delete this.template_value;

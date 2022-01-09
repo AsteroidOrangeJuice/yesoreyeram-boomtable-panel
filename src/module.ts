@@ -4,17 +4,16 @@ import _ from 'lodash';
 import kbn from 'app/core/utils/kbn';
 import { loadPluginCss, MetricsPanelCtrl } from 'app/plugins/sdk';
 import {
-  IBoomSeries,
   IBoomRenderingOptions,
   IBoomTable,
   IBoomHTML,
-  IBoomTableTransformationOptions,
   BoomPattern,
   BoomSeries,
   BoomOutput,
 } from './app/boom/index';
 import { defaultPattern, seriesToTable } from "./app/app";
 import { plugin_id, value_name_options, textAlignmentOptions, config } from "./app/config";
+import {supplementUndefinedVals} from "./app/boom/BoomUtils";
 
 loadPluginCss({
   dark: `plugins/${plugin_id}/css/default.dark.css`,
@@ -134,11 +133,12 @@ class GrafanaBoomTableCtrl extends MetricsPanelCtrl {
 
 GrafanaBoomTableCtrl.prototype.render = function () {
   if (this.dataReceived) {
-    let outputdata: IBoomSeries[] = this.dataReceived.map(seriesData => {
-      let seriesOptions = {
-        debug_mode: this.panel.debug_mode,
-        row_col_wrapper: this.panel.row_col_wrapper || '_',
-      };
+    // console.log('rendering');
+    let seriesOptions = {
+      debug_mode: this.panel.debug_mode,
+      row_col_wrapper: this.panel.row_col_wrapper || '_',
+    };
+    let outputdata: BoomSeries[] = this.dataReceived.map(seriesData => {
       return new BoomSeries(
         seriesData,
         this.panel.defaultPattern,
@@ -149,12 +149,12 @@ GrafanaBoomTableCtrl.prototype.render = function () {
         this.timeSrv
       );
     });
-    let boomTableTransformationOptions: IBoomTableTransformationOptions = {
-      non_matching_cells_color_bg: this.panel.non_matching_cells_color_bg,
-      non_matching_cells_color_text: this.panel.non_matching_cells_color_text,
-      non_matching_cells_text: this.panel.non_matching_cells_text,
-    };
-    let boomtabledata: IBoomTable = seriesToTable(outputdata, boomTableTransformationOptions);
+    // console.log('supplementing');
+    // console.log(`output contains ${outputdata.length}`);
+    outputdata.push(...supplementUndefinedVals(outputdata, this.panel.patterns, this.panel.defaultPattern, seriesOptions, this.panel.scopedVars, this.templateSrv, this.timeSrv));
+    // console.log(`output contains ${outputdata.length}`);
+    // console.log('done supplementing');
+    let boomtabledata: IBoomTable = seriesToTable(outputdata);
     let renderingOptions: IBoomRenderingOptions = {
       default_title_for_rows: this.panel.default_title_for_rows || config.default_title_for_rows,
       first_column_link: this.panel.first_column_link || '#',

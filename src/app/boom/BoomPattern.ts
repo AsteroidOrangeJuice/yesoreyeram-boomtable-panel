@@ -13,10 +13,10 @@ class BoomPattern implements IBoomPattern {
   public delimiter: string;
   public enable_bgColor: Boolean;
   public enable_bgColor_overrides: Boolean;
-  public enable_clickable_cells: Boolean;
+  public enable_clickable_cells: boolean;
   public enable_textColor: Boolean;
   public enable_textColor_overrides: Boolean;
-  public enable_time_based_thresholds: Boolean;
+  public enable_time_based_thresholds: boolean;
   public enable_transform: Boolean;
   public enable_transform_overrides: Boolean;
   public filter: {
